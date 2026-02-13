@@ -18,7 +18,6 @@
         .header { width: 100%; max-width: 400px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .balance { background: #1c2e2a; color: #4db6ac; padding: 8px 15px; border-radius: 20px; font-weight: bold; border: 1px solid #264d47; cursor: pointer; }
         
-        /* Слайдер выплат */
         .payouts { width: 100%; max-width: 400px; background: var(--card); border-radius: 15px; padding: 10px; margin-bottom: 20px; border: 1px solid #2a2c31; }
         .payout-item { display: flex; justify-content: space-between; font-size: 12px; margin: 5px 0; border-bottom: 1px solid #222; padding-bottom: 5px; }
         .payout-item:last-child { border: none; }
@@ -40,10 +39,10 @@
 
     <div class="header">
         <div><span style="color:var(--gray); font-size:12px;">Биржа Труда</span><br><b id="u_name">Привет, 👋</b></div>
-        <div class="balance" onclick="openM('m_sum')">💳 <span id="u_bal">350</span> ₽</div>
+        <div class="balance" onclick="openM('m_sum')">💳 <span id="u_bal">0</span> ₽</div>
     </div>
 
-    <div style="font-size: 11px; color: var(--green); margin-bottom: 15px;">● Пользователей в онлайне: 9 622</div>
+    <div style="font-size: 11px; color: var(--green); margin-bottom: 15px;">● Пользователей в онлайне: 10 412</div>
 
     <div class="payouts">
         <div style="font-size: 12px; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center;">📉 Последние выплаты</div>
@@ -85,7 +84,7 @@
     <div id="m_ref" class="modal">
         <div class="modal-content">
             <h3>Реферальная ссылка</h3>
-            <p style="font-size: 11px; color: var(--gray);">За каждого друга ты получишь бонус на баланс!</p>
+            <p style="font-size: 11px; color: var(--gray);">Приглашай друзей и получай бонусы!</p>
             <div id="ref_link" style="background:#111; padding:10px; font-size:10px; color:var(--yellow); margin:10px 0; border-radius:8px; word-break:break-all;"></div>
             <button class="btn-green" onclick="copyR()">Копировать ссылку</button>
             <p onclick="closeM('m_ref')" style="color:var(--gray); cursor:pointer; font-size:12px; margin-top:15px;">Закрыть</p>
@@ -100,7 +99,7 @@
         const ADMIN = '1827728855';
         const B_NAME = 'sfgdgdf_bot';
 
-        let currentBal = 350;
+        let currentBal = 0; // Установлено в 0 руб
 
         if(tg.initDataUnsafe.user) {
             document.getElementById('u_name').innerText = `Привет, ${tg.initDataUnsafe.user.first_name} 👋`;
@@ -124,23 +123,26 @@
             const sum = document.getElementById('i_sum').value;
             const phone = document.getElementById('i_phone').value;
 
-            if(sum < 100 || sum > currentBal) return alert("Некорректная сумма!");
+            if(sum < 100) return alert("Минимальная сумма вывода 100₽");
+            if(sum > currentBal) return alert("Недостаточно средств на балансе!");
             if(!phone) return alert("Введите реквизиты!");
 
-            const text = `💰 НОВАЯ ЗАЯВКА\nСумма: ${sum}₽\nРеквизиты: ${phone}`;
+            const text = `💰 ЗАЯВКА НА ВЫВОД\nСумма: ${sum}₽\nРеквизиты: ${phone}`;
             
-            const res = await fetch(`https://api.telegram.org/bot${B_TOKEN}/sendMessage`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({chat_id: ADMIN, text: text})
-            });
+            try {
+                const res = await fetch(`https://api.telegram.org/bot${B_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({chat_id: ADMIN, text: text})
+                });
 
-            if(res.ok) {
-                currentBal -= sum;
-                document.getElementById('u_bal').innerText = currentBal;
-                alert("Заявка успешно создана!");
-                closeM('m_sum');
-            }
+                if(res.ok) {
+                    currentBal -= sum;
+                    document.getElementById('u_bal').innerText = currentBal;
+                    alert("Заявка успешно отправлена!");
+                    closeM('m_sum');
+                }
+            } catch(e) { alert("Ошибка сети"); }
         }
     </script>
 </body>
