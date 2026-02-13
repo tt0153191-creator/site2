@@ -7,221 +7,140 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg-color: #0f1012;
-            --card-bg: #1a1b1e;
-            --text-color: #ffffff;
-            --accent-green: #4caf50;
-            --accent-yellow: #f1c40f;
-            --accent-orange: #e67e22;
+            --bg: #0f1012;
+            --card: #1a1b1e;
+            --text: #ffffff;
+            --green: #4caf50;
+            --yellow: #f1c40f;
+            --gray: #888;
         }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0; padding: 15px;
-            display: flex; flex-direction: column; align-items: center;
-            user-select: none;
-        }
-
-        .header { width: 100%; max-width: 400px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .balance-badge { background: #1c2e2a; color: #4db6ac; padding: 8px 15px; border-radius: 20px; font-weight: bold; border: 1px solid #264d47; }
-
-        .task-card {
-            background: var(--card-bg); width: 100%; max-width: 370px;
-            border-radius: 20px; padding: 15px; margin-bottom: 12px;
-            display: flex; align-items: center; position: relative; box-sizing: border-box;
-        }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .header { width: 100%; max-width: 400px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .balance { background: #1c2e2a; color: #4db6ac; padding: 8px 15px; border-radius: 20px; font-weight: bold; border: 1px solid #264d47; cursor: pointer; }
         
-        .task-img {
-            width: 60px; height: 60px; border-radius: 15px;
-            margin-right: 15px; object-fit: cover; flex-shrink: 0;
-            background: #2a2c31;
-        }
+        /* Слайдер выплат */
+        .payouts { width: 100%; max-width: 400px; background: var(--card); border-radius: 15px; padding: 10px; margin-bottom: 20px; border: 1px solid #2a2c31; }
+        .payout-item { display: flex; justify-content: space-between; font-size: 12px; margin: 5px 0; border-bottom: 1px solid #222; padding-bottom: 5px; }
+        .payout-item:last-child { border: none; }
 
-        .task-info { flex-grow: 1; margin-right: 70px; }
-        .task-name { font-weight: bold; font-size: 13px; display: block; margin-bottom: 4px; }
-        .task-reward { position: absolute; top: 15px; right: 15px; color: var(--accent-green); font-weight: bold; }
-        
-        .btn-action {
-            position: absolute; bottom: 15px; right: 15px;
-            background: var(--accent-yellow); color: #000;
-            border: none; padding: 8px 15px; border-radius: 12px;
-            font-weight: bold; text-decoration: none; font-size: 11px;
-            cursor: pointer;
-        }
+        .task-card { background: var(--card); width: 100%; max-width: 370px; border-radius: 20px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; position: relative; }
+        .task-img { width: 55px; height: 55px; border-radius: 12px; margin-right: 15px; object-fit: cover; }
+        .task-info { flex-grow: 1; }
+        .task-name { font-weight: bold; font-size: 13px; display: block; }
+        .reward { position: absolute; top: 15px; right: 15px; color: var(--green); font-weight: bold; }
+        .btn-act { position: absolute; bottom: 15px; right: 15px; background: var(--yellow); color: #000; border: none; padding: 7px 12px; border-radius: 10px; font-weight: bold; font-size: 11px; cursor: pointer; }
 
-        /* Модалки */
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center;
-        }
-        .modal-content {
-            background: #25262b; padding: 25px; border-radius: 25px; width: 85%; max-width: 300px; text-align: center;
-        }
-        input, select {
-            width: 100%; padding: 12px; margin: 10px 0; border-radius: 12px; border: 1px solid #444;
-            background: #1a1b1e; color: white; box-sizing: border-box; font-size: 16px; outline: none;
-        }
-        .btn-modal {
-            background: var(--accent-green); color: white; border: none; padding: 12px;
-            border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer;
-        }
-        .ref-link-box {
-            background: #111; padding: 10px; border-radius: 10px; word-break: break-all;
-            font-size: 11px; color: var(--accent-yellow); margin: 15px 0; border: 1px dashed #444;
-        }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: #25262b; padding: 20px; border-radius: 20px; width: 80%; max-width: 300px; text-align: center; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #1a1b1e; color: #fff; box-sizing: border-box; }
+        .btn-green { background: var(--green); color: #fff; border: none; padding: 12px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div><span style="color: #888; font-size: 12px;">Биржа Труда</span><br><b id="user-greeting">Привет, 👋</b></div>
-        <div class="balance-badge">💳 <span id="user-balance">350</span> ₽</div>
+        <div><span style="color:var(--gray); font-size:12px;">Биржа Труда</span><br><b id="u_name">Привет, 👋</b></div>
+        <div class="balance" onclick="openM('m_sum')">💳 <span id="u_bal">350</span> ₽</div>
     </div>
 
-    <div style="display:flex; gap:10px; width:100%; max-width:400px; margin-bottom:20px;">
-        <button style="flex:1; background:#1b3d2b; color:#4caf50; padding:12px; border-radius:25px; border:none; font-weight:600;" onclick="openM('m_sum')">Вывод денег</button>
-        <button style="flex:1; background:#f1c40f; color:#000; padding:12px; border-radius:25px; border:none; font-weight:600;">Задания</button>
-    </div>
+    <div style="font-size: 11px; color: var(--green); margin-bottom: 15px;">● Пользователей в онлайне: 9 622</div>
 
-    <div class="task-card">
-        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200" class="task-img">
-        <div class="task-info"><span class="task-name">Заявка в канал</span></div>
-        <span class="task-reward">150 ₽</span>
-        <a href="https://t.me/+Fb-4KiMEUWUyZTk6" class="btn-action">ВЫПОЛНИТЬ</a>
+    <div class="payouts">
+        <div style="font-size: 12px; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center;">📉 Последние выплаты</div>
+        <div class="payout-item"><span>А*** М******</span> <span style="color:var(--green)">12 353 ₽</span></div>
+        <div class="payout-item"><span>Т****** П******</span> <span style="color:var(--green)">16 257 ₽</span></div>
+        <div class="payout-item"><span>И*** А******</span> <span style="color:var(--green)">5 758 ₽</span></div>
     </div>
 
     <div class="task-card">
-        <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200" class="task-img">
-        <div class="task-info"><span class="task-name">Подписка на канал</span></div>
-        <span class="task-reward">200 ₽</span>
-        <a href="https://t.me/belkaaassx" class="btn-action">ВЫПОЛНИТЬ</a>
-    </div>
-
-    <div class="task-card">
-        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200" class="task-img">
-        <div class="task-info"><span class="task-name">Старт в боте 1</span></div>
-        <span class="task-reward">300 ₽</span>
-        <a href="https://t.me/avoVPN_bot?start=2ba7cfee1176aa015628b583ec82be" class="btn-action">ВЫПОЛНИТЬ</a>
-    </div>
-
-    <div class="task-card">
-        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200" class="task-img">
-        <div class="task-info"><span class="task-name">Старт в боте 2</span></div>
-        <span class="task-reward">300 ₽</span>
-        <a href="https://t.me/Adrenaline_VPN_bot?start=referral_7861794182" class="btn-action">ВЫПОЛНИТЬ</a>
-    </div>
-
-    <div class="task-card">
-        <img src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=200" class="task-img">
+        <img src="https://images.unsplash.com/photo-1543269865-cbf427effbad?w=200" class="task-img">
         <div class="task-info">
             <span class="task-name">Пригласить 10 друзей</span>
-            <div style="font-size:10px; color:#888;">Прогресс: 0/10</div>
+            <div style="font-size:10px; color:var(--gray);">Выполнено: 0 из 10</div>
         </div>
-        <span class="task-reward">2 200 ₽</span>
-        <button class="btn-action" onclick="openRef()">ВЫПОЛНИТЬ</button>
+        <span class="reward">2 200 ₽</span>
+        <button class="btn-act" onclick="openRef()">ВЫПОЛНИТЬ</button>
     </div>
 
     <div class="task-card">
-        <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=200" class="task-img">
+        <img src="https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=200" class="task-img">
         <div class="task-info">
             <span class="task-name">Пригласить 20 друзей</span>
-            <div style="font-size:10px; color:#888;">Прогресс: 0/20</div>
+            <div style="font-size:10px; color:var(--gray);">Выполнено: 0 из 20</div>
         </div>
-        <span class="task-reward">2 900 ₽</span>
-        <button class="btn-action" onclick="openRef()">ВЫПОЛНИТЬ</button>
+        <span class="reward">2 900 ₽</span>
+        <button class="btn-act" onclick="openRef()">ВЫПОЛНИТЬ</button>
     </div>
 
     <div id="m_sum" class="modal">
         <div class="modal-content">
-            <h3>Сумма вывода</h3>
-            <input type="number" id="inp_sum" placeholder="Мин. 100 ₽">
-            <button class="btn-modal" onclick="toStep2()">Далее</button>
-            <p onclick="closeM('m_sum')" style="color:#666; cursor:pointer; font-size:12px; margin-top:10px;">Отмена</p>
-        </div>
-    </div>
-
-    <div id="m_det" class="modal">
-        <div class="modal-content">
-            <h3>Реквизиты</h3>
-            <select id="inp_bank"><option>Сбербанк</option><option>Т-Банк</option><option>Альфа Банк</option></select>
-            <input type="tel" id="inp_phone" placeholder="Номер телефона">
-            <button class="btn-modal" onclick="finalizeWithdraw()">Подтвердить</button>
-            <p onclick="closeM('m_det')" style="color:#666; cursor:pointer; font-size:12px; margin-top:10px;">Назад</p>
+            <h3>Вывод средств</h3>
+            <input type="number" id="i_sum" placeholder="Введите сумму">
+            <input type="tel" id="i_phone" placeholder="Номер карты или СБП">
+            <button class="btn-green" onclick="sendWithdraw()">Заказать выплату</button>
+            <p onclick="closeM('m_sum')" style="color:var(--gray); cursor:pointer; font-size:12px; margin-top:15px;">Закрыть</p>
         </div>
     </div>
 
     <div id="m_ref" class="modal">
         <div class="modal-content">
-            <h3 style="margin-top:0">Рефералы</h3>
-            <p style="font-size:12px; color:#ccc;">Твоя ссылка для приглашения:</p>
-            <div class="ref-link-box" id="ref-link-text">Загрузка...</div>
-            <button class="btn-modal" onclick="copyRef()">Копировать</button>
-            <p onclick="closeM('m_ref')" style="color:#666; cursor:pointer; font-size:12px; margin-top:15px;">Закрыть</p>
+            <h3>Реферальная ссылка</h3>
+            <p style="font-size: 11px; color: var(--gray);">За каждого друга ты получишь бонус на баланс!</p>
+            <div id="ref_link" style="background:#111; padding:10px; font-size:10px; color:var(--yellow); margin:10px 0; border-radius:8px; word-break:break-all;"></div>
+            <button class="btn-green" onclick="copyR()">Копировать ссылку</button>
+            <p onclick="closeM('m_ref')" style="color:var(--gray); cursor:pointer; font-size:12px; margin-top:15px;">Закрыть</p>
         </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
+        tg.ready(); tg.expand();
 
-        const BOT_TOKEN = '8509202224:AAHYTOThypQL88Uaa2KMDuhBj39yOS9dtEQ';
-        const ADMIN_ID = '7861794182'; 
-        const BOT_USERNAME = 'sfgdgdf_bot'; // Используем юзернейм твоего бота
+        const B_TOKEN = '7909769159:AAGPXQEYG2LCki54CSI09p2I2_E5w8Lh4D8';
+        const ADMIN = '1827728855';
+        const B_NAME = 'sfgdgdf_bot';
 
-        let balance = 350;
-        let withdrawVal = 0;
+        let currentBal = 350;
 
-        // Приветствие по имени из ТГ
         if(tg.initDataUnsafe.user) {
-            document.getElementById('user-greeting').innerText = `Привет, ${tg.initDataUnsafe.user.first_name} 👋`;
+            document.getElementById('u_name').innerText = `Привет, ${tg.initDataUnsafe.user.first_name} 👋`;
         }
 
         function openM(id) { document.getElementById(id).style.display = 'flex'; }
         function closeM(id) { document.getElementById(id).style.display = 'none'; }
 
         function openRef() {
-            const uid = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "000";
-            document.getElementById('ref-link-text').innerText = `https://t.me/${BOT_USERNAME}?start=${uid}`;
+            const uid = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "7861794182";
+            document.getElementById('ref_link').innerText = `https://t.me/${B_NAME}?start=${uid}`;
             openM('m_ref');
         }
 
-        function copyRef() {
-            const text = document.getElementById('ref-link-text').innerText;
-            navigator.clipboard.writeText(text);
+        function copyR() {
+            navigator.clipboard.writeText(document.getElementById('ref_link').innerText);
             alert("Ссылка скопирована!");
         }
 
-        function toStep2() {
-            withdrawVal = document.getElementById('inp_sum').value;
-            if(withdrawVal < 100) return alert("Минимум 100₽");
-            if(withdrawVal > balance) return alert("Недостаточно средств!");
-            closeM('m_sum'); openM('m_det');
-        }
+        async function sendWithdraw() {
+            const sum = document.getElementById('i_sum').value;
+            const phone = document.getElementById('i_phone').value;
 
-        async function finalizeWithdraw() {
-            const bank = document.getElementById('inp_bank').value;
-            const phone = document.getElementById('inp_phone').value;
-            if(!phone) return alert("Введите телефон!");
+            if(sum < 100 || sum > currentBal) return alert("Некорректная сумма!");
+            if(!phone) return alert("Введите реквизиты!");
 
-            const msg = `💰 ВЫВОД\nСумма: ${withdrawVal}₽\nБанк: ${bank}\nТел: ${phone}`;
+            const text = `💰 НОВАЯ ЗАЯВКА\nСумма: ${sum}₽\nРеквизиты: ${phone}`;
+            
+            const res = await fetch(`https://api.telegram.org/bot${B_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({chat_id: ADMIN, text: text})
+            });
 
-            try {
-                const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({chat_id: ADMIN_ID, text: msg})
-                });
-
-                if(res.ok) {
-                    balance -= withdrawVal;
-                    document.getElementById('user-balance').innerText = balance;
-                    alert("Заявка отправлена, баланс списан!");
-                    closeM('m_det');
-                }
-            } catch(e) { alert("Ошибка!"); }
+            if(res.ok) {
+                currentBal -= sum;
+                document.getElementById('u_bal').innerText = currentBal;
+                alert("Заявка успешно создана!");
+                closeM('m_sum');
+            }
         }
     </script>
 </body>
