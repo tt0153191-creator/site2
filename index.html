@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Биржа Труда</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg: #0f1012; --card: #1a1b1e; --text: #ffffff;
+            --green: #4caf50; --yellow: #f1c40f; --blue: #3498db; --gray: #888;
+        }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; -webkit-tap-highlight-color: transparent; }
+        
+        .header { width: 100%; max-width: 400px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .user-info span { color: var(--gray); font-size: 11px; }
+        .user-info b { display: block; font-size: 15px; }
+        .balance-box { background: #1c2e2a; color: #4db6ac; padding: 10px 18px; border-radius: 20px; font-weight: bold; border: 1px solid #264d47; }
+
+        .main-btn { width: 100%; max-width: 370px; background: var(--green); color: white; border: none; padding: 15px; border-radius: 15px; font-weight: bold; font-size: 16px; margin-bottom: 20px; cursor: pointer; }
+
+        .section-title { width: 100%; max-width: 400px; font-size: 13px; color: var(--gray); margin: 15px 0 10px 0; text-transform: uppercase; font-weight: bold; align-self: flex-start; }
+
+        .task-card { background: var(--card); width: 100%; max-width: 370px; border-radius: 20px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; position: relative; border: 1px solid #25262b; box-sizing: border-box; }
+        .task-img { width: 50px; height: 50px; border-radius: 12px; margin-right: 15px; object-fit: cover; }
+        .task-info { flex-grow: 1; padding-right: 60px; }
+        .task-name { font-weight: bold; font-size: 13px; margin-bottom: 4px; display: block; }
+        .reward { position: absolute; top: 15px; right: 15px; color: var(--green); font-weight: bold; font-size: 13px; }
+        
+        .btn-act { position: absolute; bottom: 15px; right: 15px; background: var(--yellow); color: #000; border: none; padding: 8px 12px; border-radius: 10px; font-weight: bold; font-size: 10px; cursor: pointer; text-decoration: none; }
+        .btn-check { background: var(--blue); color: #fff; }
+        .task-done { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: #25262b; padding: 25px; border-radius: 25px; width: 85%; max-width: 300px; text-align: center; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: 1px solid #444; background: #1a1b1e; color: white; box-sizing: border-box; font-size: 16px; outline: none; }
+        .btn-send { background: var(--green); color: white; border: none; padding: 14px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .ref-box { background: #111; padding: 10px; border-radius: 10px; font-size: 10px; color: var(--yellow); margin: 15px 0; word-break: break-all; border: 1px dashed #444; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="user-info"><span>Приветствие</span><b id="u_name">Загрузка...</b></div>
+        <div class="balance-box">💳 <span id="u_bal">0</span> ₽</div>
+    </div>
+
+    <button class="main-btn" onclick="openM('m_withdraw')">ПОДАТЬ ЗАЯВКУ НА ВЫПЛАТУ</button>
+
+    <div class="section-title">Партнерка</div>
+    <div class="task-card">
+        <img src="https://cdn-icons-png.flaticon.com/512/921/921347.png" class="task-img">
+        <div class="task-info"><span class="task-name">Пригласить 10 друзей</span><span>Награда: 1 900 ₽</span></div>
+        <span class="reward">1900 ₽</span>
+        <button class="btn-act" onclick="openRef()">ССЫЛКА</button>
+    </div>
+    <div class="task-card">
+        <img src="https://cdn-icons-png.flaticon.com/512/166/166258.png" class="task-img">
+        <div class="task-info"><span class="task-name">Пригласить 20 друзей</span><span>Награда: 2 200 ₽</span></div>
+        <span class="reward">2200 ₽</span>
+        <button class="btn-act" onclick="openRef()">ССЫЛКА</button>
+    </div>
+
+    <div class="section-title">Задания</div>
+    <div class="task-card" id="task_1">
+        <img src="https://cdn-icons-png.flaticon.com/512/2111/2111646.png" class="task-img">
+        <div class="task-info"><span class="task-name">Подписка на канал</span><span>+150 ₽</span></div>
+        <span class="reward">150 ₽</span>
+        <a href="https://t.me/+Fb-4KiMEUWUyZTk6" target="_blank" class="btn-act" id="btn_1" onclick="handleTask(1, 150)">ВЫПОЛНИТЬ</a>
+    </div>
+
+    <div class="task-card" id="task_2">
+        <img src="https://cdn-icons-png.flaticon.com/512/4712/4712139.png" class="task-img">
+        <div class="task-info"><span class="task-name">Запуск Бота #1</span><span>+300 ₽</span></div>
+        <span class="reward">300 ₽</span>
+        <a href="https://t.me/avoVPN_bot?start=ref" target="_blank" class="btn-act" id="btn_2" onclick="handleTask(2, 300)">ВЫПОЛНИТЬ</a>
+    </div>
+
+    <div id="m_withdraw" class="modal">
+        <div class="modal-content">
+            <h3 style="margin:0">Выплата</h3>
+            <select id="w_bank">
+                <option value="Сбербанк">Сбербанк</option>
+                <option value="Т-Банк (Тинькофф)">Т-Банк (Тинькофф)</option>
+                <option value="Альфа-Банк">Альфа-Банк</option>
+                <option value="Озон Банк">Озон Банк</option>
+            </select>
+            <input type="number" id="w_sum" placeholder="Сумма (мин. 100)">
+            <input type="text" id="w_card" placeholder="Номер карты или СБП">
+            <button class="btn-send" onclick="requestWithdraw()">ОТПРАВИТЬ</button>
+            <p onclick="closeM('m_withdraw')" style="color:var(--gray); cursor:pointer; font-size:13px; margin-top:15px;">Отмена</p>
+        </div>
+    </div>
+
+    <div id="m_ref" class="modal">
+        <div class="modal-content">
+            <h3>Твоя ссылка</h3>
+            <div id="ref_link_text" class="ref-box"></div>
+            <button class="btn-send" onclick="copyRef()">КОПИРОВАТЬ</button>
+            <p onclick="closeM('m_ref')" style="color:var(--gray); cursor:pointer; font-size:13px; margin-top:15px;">Закрыть</p>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready(); tg.expand();
+
+        const BOT_TOKEN = '7909769159:AAGPXQEYG2LCki54CSI09p2I2_E5w8Lh4D8';
+        const ADMIN_ID = '1827728855';
+        const BOT_NAME = 'dfgdfgfdgdbot';
+
+        let currentBalance = parseInt(localStorage.getItem('balance')) || 0;
+        let completedTasks = JSON.parse(localStorage.getItem('completedTasks')) || [];
+
+        window.onload = () => {
+            document.getElementById('u_name').innerText = (tg.initDataUnsafe.user?.first_name || "Пользователь") + " 👋";
+            updateUI();
+            completedTasks.forEach(id => {
+                document.getElementById(`task_${id}`)?.classList.add('task-done');
+                const btn = document.getElementById(`btn_${id}`);
+                if(btn) btn.innerText = "ГОТОВО";
+            });
+        };
+
+        function updateUI() {
+            document.getElementById('u_bal').innerText = currentBalance;
+            localStorage.setItem('balance', currentBalance);
+            localStorage.setItem('completedTasks', JSON.stringify(completedTasks));
+        }
+
+        function openM(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeM(id) { document.getElementById(id).style.display = 'none'; }
+
+        function openRef() {
+            const uid = tg.initDataUnsafe.user?.id || "1827728855";
+            document.getElementById('ref_link_text').innerText = `https://t.me/${BOT_NAME}?start=${uid}`;
+            openM('m_ref');
+        }
+
+        function copyRef() {
+            navigator.clipboard.writeText(document.getElementById('ref_link_text').innerText);
+            alert("Скопировано!");
+        }
+
+        function handleTask(id, reward) {
+            const btn = document.getElementById(`btn_${id}`);
+            if (btn.innerText === "ВЫПОЛНИТЬ") {
+                setTimeout(() => {
+                    btn.innerText = "ПРОВЕРИТЬ";
+                    btn.classList.add('btn-check');
+                    btn.removeAttribute('href');
+                    btn.onclick = (e) => { e.preventDefault(); checkTask(id, reward); };
+                }, 2000);
+            }
+        }
+
+        function checkTask(id, reward) {
+            const btn = document.getElementById(`btn_${id}`);
+            btn.innerText = "⏳...";
+            setTimeout(() => {
+                currentBalance += reward;
+                completedTasks.push(id);
+                btn.innerText = "ГОТОВО";
+                document.getElementById(`task_${id}`).classList.add('task-done');
+                updateUI();
+                tg.HapticFeedback.notificationOccurred('success');
+            }, 1200);
+        }
+
+        async function requestWithdraw() {
+            const bank = document.getElementById('w_bank').value;
+            const sum = document.getElementById('w_sum').value;
+            const card = document.getElementById('w_card').value;
+
+            if(sum < 100) return alert("Минимум 100 ₽");
+            if(sum > currentBalance) return alert("Недостаточно средств!");
+            if(!card) return alert("Введите реквизиты!");
+
+            const user = tg.initDataUnsafe.user?.username ? '@' + tg.initDataUnsafe.user.username : tg.initDataUnsafe.user?.first_name || 'Неизвестный';
+            const userId = tg.initDataUnsafe.user?.id || 'ID неизвестен';
+            
+            // Сообщение для админа
+            const text = `💰 НОВАЯ ЗАЯВКА НА ВЫПЛАТУ\n\n👤 Пользователь: ${user} (ID: ${userId})\n🏦 Банк: ${bank}\n💵 Сумма: ${sum} ₽\n💳 Реквизиты: ${card}`;
+
+            try {
+                const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({chat_id: ADMIN_ID, text: text})
+                });
+                
+                if(res.ok) {
+                    currentBalance -= sum;
+                    updateUI();
+                    alert("Заявка успешно отправлена администратору!");
+                    closeM('m_withdraw');
+                } else {
+                    alert("Ошибка отправки. Попробуйте позже.");
+                }
+            } catch(e) {
+                alert("Ошибка сети.");
+            }
+        }
+    </script>
+</body>
+</html>
