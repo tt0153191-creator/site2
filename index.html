@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Premium Exchange</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --text: #ffffff;
+            --accent: #00ff88;
+            --yellow: #ffcc00;
+            --blue: #00a2ff;
+            --purple: #a044ff;
+            --gray: #94a3b8;
+            --grad-green: linear-gradient(135deg, #00b09b, #96c93d);
+        }
+
+        body { 
+            margin: 0; padding: 15px; padding-bottom: 110px;
+            color: var(--text); font-family: 'Segoe UI', Roboto, sans-serif; 
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh; overflow-x: hidden;
+            background-color: #050607;
+        }
+
+        /* АНИМИРОВАННЫЙ ФОН */
+        .bg-animated {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -2;
+            background: linear-gradient(125deg, #050607, #0a111a, #0d1b15, #140b1a);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .blobs { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; filter: blur(80px); }
+        .blob { position: absolute; border-radius: 50%; opacity: 0.25; animation: moveBlob 25s infinite alternate ease-in-out; }
+        .b1 { width: 400px; height: 400px; background: var(--accent); top: -5%; left: -5%; }
+        .b2 { width: 350px; height: 350px; background: var(--blue); bottom: 15%; right: -5%; }
+
+        @keyframes moveBlob {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(60px, 100px) scale(1.1); }
+        }
+
+        /* НАВИГАЦИЯ */
+        .tab-content { display: none; width: 100%; max-width: 400px; flex-direction: column; align-items: center; animation: fadeIn 0.5s ease; }
+        .active-tab { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .nav-bar {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 350px; height: 65px;
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.1);
+            display: flex; justify-content: space-around; align-items: center; 
+            z-index: 100; backdrop-filter: blur(20px); border-radius: 25px;
+        }
+        .nav-item { color: var(--gray); text-decoration: none; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: 700; cursor: pointer; }
+        .nav-item.active { color: var(--accent); }
+        .nav-icon { font-size: 20px; margin-bottom: 2px; }
+
+        /* HEADER */
+        .header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; margin-top: 5px; }
+        .balance-box { background: rgba(0, 255, 136, 0.1); color: var(--accent); padding: 10px 18px; border-radius: 18px; font-weight: 800; border: 1px solid rgba(0, 255, 136, 0.2); backdrop-filter: blur(10px); }
+
+        /* ОКНО ВЫПЛАТ */
+        .withdraw-feed {
+            width: 100%; background: rgba(255, 255, 255, 0.03); border-radius: 24px;
+            padding: 15px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.06);
+            backdrop-filter: blur(12px); box-sizing: border-box;
+        }
+        .feed-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 12px; color: var(--accent); font-weight: 800; text-transform: uppercase; }
+        .feed-item { 
+            display: flex; justify-content: space-between; padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 13px;
+            animation: slideIn 0.5s ease-out;
+        }
+        .feed-item:last-child { border-bottom: none; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* КАРТОЧКИ ЗАДАНИЙ */
+        .task-card { 
+            background: rgba(255, 255, 255, 0.03); width: 100%; border-radius: 22px; padding: 16px; margin-bottom: 12px; 
+            display: flex; align-items: center; position: relative; 
+            border: 1px solid rgba(255,255,255,0.08); box-sizing: border-box; backdrop-filter: blur(12px);
+        }
+        .icon-box { width: 50px; height: 50px; border-radius: 14px; margin-right: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .icon-box img { width: 26px; height: 26px; filter: brightness(0) invert(1); }
+        .reward-tag { color: var(--yellow); font-weight: 700; font-size: 13px; position: absolute; top: 16px; right: 16px; }
+        .btn-act { position: absolute; bottom: 16px; right: 16px; background: var(--yellow); color: #000; border: none; padding: 9px 15px; border-radius: 10px; font-weight: 800; font-size: 11px; cursor: pointer; text-decoration: none; }
+
+        /* ПРОФИЛЬ */
+        .profile-container {
+            width: 100%; background: rgba(255,255,255,0.02); border-radius: 35px;
+            padding: 25px 20px; border: 1px solid rgba(255,255,255,0.1);
+            display: flex; flex-direction: column; align-items: center; box-sizing: border-box; backdrop-filter: blur(20px);
+        }
+        .user-avatar { width: 90px; height: 90px; border-radius: 50%; border: 2px solid #fff; object-fit: cover; margin-bottom: 15px; box-shadow: 0 0 15px rgba(0,255,136,0.3); }
+        .stats-card { width: 100%; background: rgba(0, 255, 136, 0.05); border-radius: 20px; padding: 15px; margin: 20px 0; text-align: center; border: 1px solid rgba(0, 255, 136, 0.1); }
+        .withdraw-btn { width: 100%; background: var(--grad-green); color: #000; border: none; padding: 18px; border-radius: 18px; font-weight: 900; font-size: 16px; text-transform: uppercase; cursor: pointer; }
+
+        .completed-section { width: 100%; margin-top: 30px; }
+        .completed-title { font-size: 11px; color: var(--gray); text-transform: uppercase; margin-bottom: 15px; font-weight: 800; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(20px); }
+        .modal-content { background: #111316; padding: 30px; border-radius: 30px; width: 85%; max-width: 320px; text-align: center; }
+        input, select { width: 100%; padding: 14px; margin: 10px 0; border-radius: 12px; border: 1px solid #334155; background: #0b0d10; color: white; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+
+    <div class="bg-animated"></div>
+    <div class="blobs"><div class="blob b1"></div><div class="blob b2"></div></div>
+
+    <div id="tasks-tab" class="tab-content active-tab">
+        <div class="header">
+            <div class="user-info"><span style="color:var(--gray); font-size:11px;">Работа</span><br><b id="u_name_top">...</b></div>
+            <div class="balance-box"><span class="u_bal_val">0</span> ₽</div>
+        </div>
+
+        <div class="withdraw-feed">
+            <div class="feed-header"><span>💰</span> Недавние выплаты</div>
+            <div id="feed-list">
+                </div>
+        </div>
+
+        <div id="available-tasks" style="width:100%;"></div>
+    </div>
+
+    <div id="profile-tab" class="tab-content">
+        <h2 style="align-self: flex-start; margin-bottom: 20px;">Мой Профиль</h2>
+        <div class="profile-container">
+            <img id="u_avatar" class="user-avatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png">
+            <h1 id="u_name_full" style="margin: 0; font-size: 20px;">...</h1>
+            <span id="u_login" style="color: var(--blue); margin-bottom: 10px;">@username</span>
+
+            <div class="stats-card">
+                <div style="color: var(--gray); font-size: 10px; font-weight: 800;">ДОСТУПНО</div>
+                <div style="font-size: 28px; font-weight: 900; color: var(--accent);"><span class="u_bal_val">0</span> ₽</div>
+            </div>
+
+            <button class="withdraw-btn" onclick="openM('m_withdraw')">Оформить выплату</button>
+
+            <div class="completed-section">
+                <div class="completed-title">Выполнено</div>
+                <div id="completed-tasks-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-item active" onclick="switchTab('tasks-tab', this)"><span class="nav-icon">🎯</span>Задания</div>
+        <div class="nav-item" onclick="switchTab('profile-tab', this)"><span class="nav-icon">👤</span>Профиль</div>
+    </div>
+
+    <div id="m_withdraw" class="modal">
+        <div class="modal-content">
+            <h3>Выплата СБП</h3>
+            <select id="w_bank"><option>Сбербанк</option><option>Т-Банк</option><option>Альфа-Банк</option></select>
+            <input type="number" id="w_sum" placeholder="Сумма (от 100 ₽)">
+            <input type="text" id="w_phone" placeholder="Номер телефона">
+            <button class="withdraw-btn" onclick="requestWithdraw()" style="padding:15px;">Отправить</button>
+            <p onclick="closeM('m_withdraw')" style="cursor:pointer; color:var(--gray); margin-top:15px;">Отмена</p>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready(); tg.expand();
+
+        const BOT_TOKEN = '8509202224:AAHYTOThypQL88Uaa2KMDuhBj39yOS9dtEQ';
+        const ADMIN_ID = '7861794182';
+
+        const ALL_TASKS = [
+            {id: 1, title: "Заявка в канал", reward: 150, url: "https://t.me/+Fb-4KiMEUWUyZTk6", color: "linear-gradient(135deg, #2193b0, #6dd5ed)", icon: "https://cdn-icons-png.flaticon.com/512/2111/2111646.png"},
+            {id: 2, title: "Подписка Belka", reward: 150, url: "https://t.me/belkaaassx", color: "linear-gradient(135deg, #8e44ad, #c33764)", icon: "https://cdn-icons-png.flaticon.com/512/1384/1384060.png"},
+            {id: 3, title: "Запустить avoVPN", reward: 300, url: "https://t.me/avoVPN_bot?start=2ba7cfee1176aa015628b583ec82be", color: "var(--grad-green)", icon: "https://cdn-icons-png.flaticon.com/512/4712/4712139.png"},
+            {id: 4, title: "Запустить Adrenaline", reward: 300, url: "https://t.me/Adrenaline_VPN_bot?start=referral_7861794182", color: "linear-gradient(135deg, #f83600, #f9d423)", icon: "https://cdn-icons-png.flaticon.com/512/733/733577.png"}
+        ];
+
+        let currentBalance = parseInt(localStorage.getItem('balance')) || 0;
+        let completedIds = JSON.parse(localStorage.getItem('completedIds')) || [];
+
+        // ГЕНЕРАЦИЯ ВЫПЛАТ
+        function updateWithdrawFeed() {
+            const names = ["dmitry", "marina", "ivan", "user_77", "kate", "alex", "premium_man", "vlad", "elena", "cryptoboy", "sergey", "masha", "denis_trader", "olga"];
+            const list = document.getElementById('feed-list');
+            list.innerHTML = '';
+            
+            // Генерируем 5 случайных записей
+            for(let i=0; i<5; i++) {
+                const name = names[Math.floor(Math.random() * names.length)];
+                const sum = Math.floor(Math.random() * (13000 - 1000 + 1)) + 1000;
+                list.innerHTML += `
+                    <div class="feed-item">
+                        <span style="color:var(--gray)">${name}****</span>
+                        <span style="font-weight:700;">+ ${sum.toLocaleString()} ₽</span>
+                    </div>
+                `;
+            }
+        }
+
+        window.onload = () => {
+            const user = tg.initDataUnsafe.user;
+            if(user) {
+                document.getElementById('u_name_top').innerText = user.first_name;
+                document.getElementById('u_name_full').innerText = user.first_name;
+                document.getElementById('u_login').innerText = user.username ? '@' + user.username : 'ID: ' + user.id;
+                if(user.photo_url) document.getElementById('u_avatar').src = user.photo_url;
+            }
+            renderTasks();
+            updateUI();
+            updateWithdrawFeed();
+            setInterval(updateWithdrawFeed, 60000); // Обновляем каждую минуту
+        };
+
+        function renderTasks() {
+            const availableContainer = document.getElementById('available-tasks');
+            const completedContainer = document.getElementById('completed-tasks-list');
+            availableContainer.innerHTML = ''; completedContainer.innerHTML = '';
+
+            ALL_TASKS.forEach(task => {
+                const isDone = completedIds.includes(task.id);
+                const html = `
+                    <div class="task-card">
+                        <div class="icon-box" style="background: ${task.color};"><img src="${task.icon}"></div>
+                        <div class="task-info"><b>${task.title}</b></div>
+                        <span class="reward-tag">${task.reward} ₽</span>
+                        ${!isDone ? `<a href="${task.url}" target="_blank" class="btn-act" id="btn_${task.id}" onclick="handleTask(${task.id}, ${task.reward})">ВЫПОЛНИТЬ</a>` : `<span class="btn-act" style="background:var(--accent); color:#000;">ГОТОВО</span>`}
+                    </div>
+                `;
+                if (isDone) completedContainer.insertAdjacentHTML('beforeend', html);
+                else availableContainer.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        function handleTask(id, reward) {
+            const btn = document.getElementById(`btn_${id}`);
+            if (btn.innerText === "ВЫПОЛНИТЬ") {
+                setTimeout(() => {
+                    btn.innerText = "ПРОВЕРИТЬ";
+                    btn.onclick = (e) => { 
+                        e.preventDefault(); currentBalance += reward;
+                        completedIds.push(id); localStorage.setItem('completedIds', JSON.stringify(completedIds));
+                        tg.HapticFeedback.notificationOccurred('success');
+                        renderTasks(); updateUI();
+                    };
+                }, 2000);
+            }
+        }
+
+        function updateUI() {
+            document.querySelectorAll('.u_bal_val').forEach(el => el.innerText = currentBalance.toLocaleString());
+            localStorage.setItem('balance', currentBalance);
+        }
+
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active-tab'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active-tab');
+            el.classList.add('active');
+            tg.HapticFeedback.impactOccurred('medium');
+        }
+
+        function openM(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeM(id) { document.getElementById(id).style.display = 'none'; }
+
+        async function requestWithdraw() {
+            const sum = document.getElementById('w_sum').value;
+            if(sum > currentBalance || sum < 100) return alert("Ошибка суммы");
+            const text = `💰 ВЫПЛАТА\n👤: ${tg.initDataUnsafe.user?.first_name}\n💵: ${sum}₽`;
+            try {
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({chat_id: ADMIN_ID, text: text})
+                });
+                currentBalance -= sum; updateUI(); closeM('m_withdraw'); alert("Заявка отправлена!");
+            } catch(e) { alert("Ошибка!"); }
+        }
+    </script>
+</body>
+</html>
